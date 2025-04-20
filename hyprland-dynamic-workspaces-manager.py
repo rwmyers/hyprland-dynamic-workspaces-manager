@@ -52,15 +52,15 @@ def get_current_workspace():
 			if regex_groups != None:
 				return Workspace( id = regex_groups.group(2), name = regex_groups.group(2) )
 	except subprocess.CalledProcessError as some_error:
-		# User probably pressed Esc to quit rofi, returning an exit code of 1.
+		# User probably pressed Esc to quit wofi, returning an exit code of 1.
 		return None
 	return None
 
 def rename_workspace():
 	try:
-		rofi_command = "rofi -no-plugins -theme \'" + rofi_theme_path + "\' -dmenu -p \"Rename workspace to\""
+		wofi_command = "wofi -no-plugins -theme \'" + wofi_theme_path + "\' -dmenu -p \"Rename workspace to\""
 
-		user_choice = subprocess.check_output( rofi_command, shell=True )
+		user_choice = subprocess.check_output( wofi_command, shell=True )
 		user_choice = user_choice.decode().strip()
 		
 		current_workspace : Workspace = get_current_workspace()
@@ -69,7 +69,7 @@ def rename_workspace():
 			subprocess.check_output( "hyprctl dispatch renameworkspace " + current_workspace.id + " \"" + user_choice + "\"", shell=True )
 
 	except subprocess.CalledProcessError as some_error:
-		# User probably pressed Esc to quit rofi, returning an exit code of 1.
+		# User probably pressed Esc to quit wofi, returning an exit code of 1.
 		user_choice = ""
 
 def ask_user_which_workspace( prompt_message : str ):
@@ -91,7 +91,7 @@ def ask_user_which_workspace( prompt_message : str ):
 		all_workspaces_as_list_of_formatted_str.append( new_workspace_as_str )
 
 		# Get the index number for our current workspace
-		# We pass this to rofi to select/highlight the line our current workspace shows on.
+		# We pass this to wofi to select/highlight the line our current workspace shows on.
 		if current_workspace.id == all_workspaces[i].id:
 			current_workspace_index = i
 
@@ -101,12 +101,12 @@ def ask_user_which_workspace( prompt_message : str ):
 		str_auto_select = ""
 
 	try:
-		rofi_command = ["rofi", "-no-plugins", str_auto_select, "-theme", rofi_theme_path, "-matching prefix", "-dmenu", "-i", "-p", prompt_message,     "-selected-row", str( current_workspace_index ) + " -a ", str( current_workspace_index )]
+		wofi_command = ["wofi", "-no-plugins", str_auto_select, "-theme", wofi_theme_path, "-matching prefix", "-dmenu", "-i", "-p", prompt_message,     "-selected-row", str( current_workspace_index ) + " -a ", str( current_workspace_index )]
 
 		all_workspaces_as_str = "\n".join(all_workspaces_as_list_of_formatted_str)
-		with subprocess.Popen(rofi_command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True) as rofi_process:
-			# Directly write data to the stdin of rofi
-			user_choice, errors = rofi_process.communicate( input=all_workspaces_as_str )
+		with subprocess.Popen(wofi_command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True) as wofi_process:
+			# Directly write data to the stdin of wofi
+			user_choice, errors = wofi_process.communicate( input=all_workspaces_as_str )
 
 		# Rofi puts a newline on the end of our choice, so remove that.
 		user_choice = user_choice.rstrip("\n")
@@ -123,7 +123,7 @@ def ask_user_which_workspace( prompt_message : str ):
         # We're stuck with using workspace names as the identifier to switch workspaces.
 
 	except subprocess.CalledProcessError as some_error:
-		# User probably pressed Esc to quit rofi, returning an exit code of 1.
+		# User probably pressed Esc to quit wofi, returning an exit code of 1.
 		user_choice = ""
 
 	return user_choice
@@ -151,13 +151,13 @@ def window_switcher():
 
 	active_window_address = get_active_window_address()
 	active_window_index = 0
-	separator = "__rofi_script_separator__"
+	separator = "__wofi_script_separator__"
 
 	json_result = subprocess.check_output("hyprctl -j clients", shell=True )
 	json_result = json_result.decode('utf-8').strip()
 	all_windows = json.loads( json_result )
 	
-	# Create a list of all windows for passing to rofi.
+	# Create a list of all windows for passing to wofi.
 	all_windows_as_str = ""
 	for window in all_windows:
 		if all_windows_as_str != "":
@@ -172,7 +172,7 @@ def window_switcher():
 		all_windows_as_str += new_window_as_str
 
 	# Loop through all windows, check if the current window id is equal to the current one.
-	# Save that index and use it to highlight the row in rofi.
+	# Save that index and use it to highlight the row in wofi.
 	active_window_address = get_active_window_address()
 	active_window_index = 0
 	index_counter = -1
@@ -190,19 +190,19 @@ def window_switcher():
 
 	user_choice = ""
 	try:
-		# rofi's dmenu option: -format 'i' -- returns the index of the selected entry.
-		rofi_command = ["rofi", "-no-plugins", str_auto_select, "-theme", rofi_theme_path, "-dmenu", "-no-custom", "-format", "i", "-i", "-p", "Switch to window", "-selected-row", str(active_window_index), "-a", str(active_window_index), "-display-columns", "1,2", "-display-column-separator", separator ]
+		# wofi's dmenu option: -format 'i' -- returns the index of the selected entry.
+		wofi_command = ["wofi", "-no-plugins", str_auto_select, "-theme", wofi_theme_path, "-dmenu", "-no-custom", "-format", "i", "-i", "-p", "Switch to window", "-selected-row", str(active_window_index), "-a", str(active_window_index), "-display-columns", "1,2", "-display-column-separator", separator ]
 
-		with subprocess.Popen(rofi_command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True) as rofi_process:
-			# Directly write data to the stdin of rofi
+		with subprocess.Popen(wofi_command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True) as wofi_process:
+			# Directly write data to the stdin of wofi
 			input_data = all_windows_as_str
-			user_choice, errors = rofi_process.communicate( input=input_data )
+			user_choice, errors = wofi_process.communicate( input=input_data )
 
 		if user_choice != "":
 			selected_index = int( user_choice.strip() )
 			user_choice = all_windows[ selected_index ][ "address" ]
 	except subprocess.CalledProcessError as some_error:
-		# User probably pressed Esc to quit rofi, returning an exit code of 1.
+		# User probably pressed Esc to quit wofi, returning an exit code of 1.
 		user_choice = ""
 
 	if user_choice != "":
@@ -224,7 +224,7 @@ def move_window_to_workspace():
 
 
 if __name__ == "__main__":
-	rofi_themes = [
+	wofi_themes = [
 		"nord",
 		"rounded-blue-dark",
 		"rounded-gray-dark",
@@ -255,7 +255,7 @@ if __name__ == "__main__":
 
 	parser.add_argument(
 		'--theme',
-		choices=rofi_themes,
+		choices=wofi_themes,
 		default="rounded-orange-dark",
 		help='Set the theme'
 	)
@@ -263,7 +263,7 @@ if __name__ == "__main__":
 	parser.add_argument(
 		'--theme-file',
 		type=str,
-		help='Select a custom theme file for rofi. E.g. --theme-file "~/path/to/your/theme.rasi"'
+		help='Select a custom theme file for wofi. E.g. --theme-file "~/path/to/your/theme.rasi"'
 	)
 
 	parser.set_defaults(auto_select=False)
@@ -274,13 +274,13 @@ if __name__ == "__main__":
 	# theme path
 	script_path = os.path.dirname( sys.argv[0] )
 	full_script_path = os.path.abspath( script_path )
-	rofi_theme_path = full_script_path + '/rofi-themes-collection/themes/' + args.theme + ".rasi"
+	wofi_theme_path = full_script_path + '/wofi-themes-collection/themes/' + args.theme + ".rasi"
 
-	is_auto_select = args.auto_select # Set to True for auto selecting the first result in rofi's list that matches what we type. This saves you from pressing enter.
+	is_auto_select = args.auto_select # Set to True for auto selecting the first result in wofi's list that matches what we type. This saves you from pressing enter.
 
 	# Override the theme with user's custom theme.
 	if args.theme_file:
-		rofi_theme_path = args.theme_file
+		wofi_theme_path = args.theme_file
 
 	if args.window_switcher:
 		window_switcher()
